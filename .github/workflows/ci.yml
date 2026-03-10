@@ -1,42 +1,78 @@
 name: CI_PIPELINE
+
 on:
   push:
     branches: [main]
   pull_request:
     branches: [main]
   workflow_dispatch:
+
 jobs:
+
   lint:
     runs-on: ubuntu-latest
     steps:
       - name: Récupérer le code
         uses: actions/checkout@v4
-      - name: Installer python
+
+      - name: Installer Python
         uses: actions/setup-python@v5
         with:
           python-version: "3.11"
+
       - name: Installer les dépendances
         run: pip install -r requirements.txt
+
       - name: Installer flake8
         run: pip install flake8
+
       - name: Lancer le linter
-        run:  |
+        run: |
           flake8 app --count --select=E9,F63,F7,F82,F841 --show-source --statistics
           flake8 app --count --max-complexity=10 --max-line-length=127 --statistics
           flake8 tests --count --max-line-length=127 --statistics
+
   test:
     runs-on: ubuntu-latest
     needs: lint
     steps:
+      - name: Récupérer le code
+        uses: actions/checkout@v4
+
+      - name: Installer Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
       - name: Installer les dépendances
         run: pip install -r requirements.txt
+
+      - name: Installer pytest
+        run: pip install pytest pytest-cov
+
       - name: Lancer les tests
         run: pytest tests/ -v --cov=app
+
   build:
     runs-on: ubuntu-latest
     needs: test
     steps:
+      - name: Récupérer le code
+        uses: actions/checkout@v4
+
+      - name: Installer Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Installer build
+        run: pip install build
+
       - name: Générer le package
         run: python -m build
+
       - name: Upload du résultat
         uses: actions/upload-artifact@v3
+        with:
+          name: package
+          path: dist/
